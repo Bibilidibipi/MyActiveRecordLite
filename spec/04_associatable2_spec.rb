@@ -77,4 +77,71 @@ describe 'Associatable' do
       expect(house.address).to eq('26th and Guerrero')
     end
   end
+
+  describe '#has_many_through' do
+    before(:all) do
+      class House
+        has_many_through :cats, :humans, :cats
+        has_many_through :countries, :humans, :country
+
+        self.finalize!
+      end
+
+      class Country < SQLObject
+        has_many :humans
+        has_many :trees
+
+        finalize!
+      end
+
+      class Human
+        belongs_to :country
+        has_many_through :trees, :country, :trees
+
+        self.finalize!
+      end
+
+      class Tree <SQLObject
+        belongs_to :country
+
+        finalize!
+      end
+    end
+
+    let(:house) { House.find(1) }
+    let(:human) { Human.find(1) }
+
+    it 'adds getter method for has_many => has_many' do
+      expect(house).to respond_to(:cats)
+    end
+
+    it 'fetches associated `cats` for a `House`' do
+      cats = house.cats
+
+      expect(cats.first).to be_instance_of(Cat)
+      expect(cats.first.name).to eq('Breakfast')
+    end
+
+    it 'adds getter method for has_many => belongs_to' do
+      expect(house).to respond_to(:countries)
+    end
+
+    it 'fetches associated `countries` for a `House`' do
+      countries = house.countries
+
+      expect(countries.first).to be_instance_of(Country)
+      expect(countries.first.name).to eq('France')
+    end
+
+    it 'adds getter method for belongs_to => has_many' do
+      expect(human).to respond_to(:trees)
+    end
+
+    it 'fetches associated `trees` for a `Human`' do
+      trees = human.trees
+
+      expect(trees.first).to be_instance_of(Tree)
+      expect(trees.first.name).to eq('Eggbert')
+    end
+  end
 end

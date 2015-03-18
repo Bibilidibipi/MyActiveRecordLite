@@ -14,7 +14,6 @@ class SQLObject
   end
 
   def self.finalize!
-
     columns.each do |name|
       define_method("#{name}") do
         attributes[name]
@@ -60,6 +59,15 @@ class SQLObject
       WHERE
         id = #{id}
     SQL
+  end
+
+  # just pre-fetches, doesn't reduce queries!
+  def self.includes(*associations)
+    Relation.new(self, associations: associations)
+  end
+
+  def self.assoc_hash
+    @@assoc_hash ||= {}
   end
 
   def initialize(params = {})

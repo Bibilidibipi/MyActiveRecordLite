@@ -62,6 +62,7 @@ module Associatable
     assoc_options[name] = options
 
     define_method(name) do
+      return self.class.assoc_hash[self][name] if self.class.assoc_hash[self] && self.class.assoc_hash[self][name]
       foreign_key = self.send(options.foreign_key) || 'NULL'
       primary_key = options.primary_key
 
@@ -82,8 +83,10 @@ module Associatable
 
   def has_many(name, options = {})
     options = HasManyOptions.new(name, self, options)
+    assoc_options[name] = options
 
     define_method(name) do
+      return self.class.assoc_hash[self][name] if self.class.assoc_hash[self] && self.class.assoc_hash[self][name]
       foreign_key = options.foreign_key
       primary_key = self.send(options.primary_key)
 
