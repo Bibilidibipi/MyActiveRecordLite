@@ -66,8 +66,8 @@ class SQLObject
     Relation.new(self, associations: associations)
   end
 
-  def self.assoc_hash
-    @@assoc_hash ||= {}
+  def assoc_hash
+    @assoc_hash ||= {}
   end
 
   def initialize(params = {})
