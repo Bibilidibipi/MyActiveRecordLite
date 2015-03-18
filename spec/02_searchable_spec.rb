@@ -38,7 +38,7 @@ describe 'Searchable' do
     expect(human.house_id).to eq(1)
   end
 
-  it '#where returns [] if nothing matches the criteria' do
-    expect(Human.where(fname: 'Nowhere', lname: 'Man')).to eq([])
+  it '#where returns object with length 0 if nothing matches the criteria' do
+    expect(Human.where(fname: 'Nowhere', lname: 'Man').length).to eq(0)
   end
 end

@@ -39,3 +39,7 @@ class Relation
     evaluate.send(method, *args)
   end
 end
+
+class SQLObject
+  extend Searchable
+end
