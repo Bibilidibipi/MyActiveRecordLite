@@ -29,19 +29,18 @@ class Relation
 
   def evaluate
     where_string = @where_constraints.keys.map{ |k| "#{k} = ?" }.join(" AND ")
+    where = where_string.empty? ? "" : "WHERE #{where_string}"
 
     objects = @klass.parse_all DBConnection.execute(<<-SQL, *@where_constraints.values)
       SELECT
         *
       FROM
         #{@klass.table_name}
-      WHERE
-        #{where_string}
+      #{where}
     SQL
 
-    # get all assoc objects
     unless @associations.keys.all? do |assoc|
-      @klass.assoc_options[assoc].include?(assoc)
+      @klass.assoc_options.keys.include?(assoc)
     end
       raise "Invalid inclusion"
     end
@@ -51,14 +50,14 @@ class Relation
     has_many_assocs = @associations.keys.select do |assoc|
       @klass.assoc_options[assoc].is_a?(HasManyOptions)
     end
-    #other_assocs = @associations                                          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     belongs_to_assocs.each do |assoc|
       options = @klass.assoc_options[assoc]
       foreign_keys = []
       objects.each do |obj|
-        foreign_keys << obj.foreign_key
+        foreign_keys << obj.send("#{options.foreign_key}")
       end
+      foreign_keys = foreign_keys.to_s.gsub('[', '(').gsub(']', ')')
 
       assoc_objects = @klass.parse_all DBConnection.execute(<<-SQL)
         SELECT
@@ -72,11 +71,11 @@ class Relation
       # correlate objects
       objects.each do |obj|
         assoc_objects.each do |assoc_obj|
-          @associations[assoc] = assoc_obj if assoc_obj.primary_key == obj.foreign_key
+          @associations[assoc] = assoc_obj if assoc_obj.id == obj.send("#{options.foreign_key}")
         end
 
         # cache association for object
-        obj.assoc_hash[assoc] = @associations[assoc]
+        obj.assoc_hash[assoc] = @associations[assoc].dup
       end
     end
 
@@ -84,10 +83,11 @@ class Relation
       options = @klass.assoc_options[assoc]
       primary_keys = []
       objects.each do |obj|
-        primary_keys << obj.primary_key
+        primary_keys << obj.id
       end
+      primary_keys = primary_keys.to_s.gsub('[', '(').gsub(']', ')')
 
-      assoc_objects = @klass.parse_all DBConnection.execute(<<-SQL)
+      assoc_objects = options.model_class.parse_all DBConnection.execute(<<-SQL)
         SELECT
           *
         FROM
@@ -100,11 +100,11 @@ class Relation
       objects.each do |obj|
         @associations[assoc] ||= []
         assoc_objects.each do |assoc_obj|
-          @associations[assoc] << assoc_obj if assoc_obj.foreign_key == obj.primary_key
+          @associations[assoc] << assoc_obj if assoc_obj.send("#{options.foreign_key}") == obj.id
         end
 
         # cache association for object
-        obj.assoc_hash[assoc] = @associations[assoc]
+        obj.assoc_hash[assoc] = @associations[assoc].dup
       end
     end
 

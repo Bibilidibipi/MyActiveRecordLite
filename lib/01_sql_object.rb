@@ -61,13 +61,13 @@ class SQLObject
     SQL
   end
 
-  # just pre-fetches, doesn't reduce queries!
+  # only works for belongs_to and has_many associations
   def self.includes(*associations)
-    Relation.new(self, associations: associations)
-  end
-
-  def assoc_hash
-    @assoc_hash ||= {}
+    assoc_hash = {}
+    associations.each do |assoc|
+      assoc_hash[assoc] = []
+    end
+    Relation.new(self, associations: assoc_hash)
   end
 
   def initialize(params = {})
@@ -79,6 +79,10 @@ class SQLObject
 
       self.send("#{attr_name}=", value)
     end
+  end
+
+  def assoc_hash
+    @assoc_hash ||= {}
   end
 
   def attributes

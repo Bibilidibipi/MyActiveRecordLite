@@ -102,7 +102,7 @@ module Associatable
       SQL
 
       if raw.nil?
-          nil
+        nil
       else
         [].tap do |many|
           raw.each do |data|
